@@ -76,4 +76,18 @@ describe("proposal change artifacts", () => {
     }
     await expect(snapshotSource(root)).rejects.toMatchObject({ code: "SYMLINK" });
   });
+
+  it("rejects a symlink or junction at the source root before traversing outside the repository", async (ctx) => {
+    const root = await fixtureRoot();
+    const external = path.join(root, "external-source");
+    await mkdir(external);
+    await writeFile(path.join(external, "leaked.ts"), "export const outside = true;\n");
+    await rm(path.join(root, "src"), { recursive: true, force: true });
+    try { await symlink(external, path.join(root, "src"), "junction"); }
+    catch (error) {
+      if (["EPERM", "EACCES", "ENOTSUP"].includes((error as NodeJS.ErrnoException).code ?? "")) ctx.skip("El sistema no permite crear una junction para esta prueba.");
+      throw error;
+    }
+    await expect(snapshotSource(root)).rejects.toMatchObject({ code: "SYMLINK" });
+  });
 });

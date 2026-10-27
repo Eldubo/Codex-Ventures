@@ -110,6 +110,7 @@ export class DockerSandboxExecutor implements SandboxExecutor {
     let container: Docker.Container | undefined;
     let timedOut = false;
     let cleanupFailed = false;
+    let terminationError: unknown;
     let stage: SandboxStage = "workspace";
     let execution: SandboxExecution;
     let timer: NodeJS.Timeout | undefined;
@@ -166,7 +167,7 @@ export class DockerSandboxExecutor implements SandboxExecutor {
       });
       stage = "start";
       await container.start();
-      const timeout = new Promise<"timeout">((resolve) => { timer = setTimeout(() => { timedOut = true; resolve("timeout"); void container?.kill({ signal: "SIGKILL" }).catch(() => undefined); }, request.timeoutMs); });
+      const timeout = new Promise<"timeout">((resolve) => { timer = setTimeout(() => { timedOut = true; resolve("timeout"); void container?.kill({ signal: "SIGKILL" }).catch((error: unknown) => { terminationError = error; }); }, request.timeoutMs); });
       let setupTimedOut = false;
       if (managedWorkspace) {
         const setup = (async () => {
@@ -200,7 +201,12 @@ export class DockerSandboxExecutor implements SandboxExecutor {
       const completed = container.wait().then((value) => ({ result: "done" as const, code: Number(value.StatusCode ?? 1) }));
       const outcome = setupTimedOut ? "timeout" : await Promise.race([completed, timeout]);
       if (timer) clearTimeout(timer);
-      if (outcome === "timeout") await container.wait().catch(() => undefined);
+      // A daemon that rejects kill or never settles wait must not defeat the
+      // job timeout. Give Docker a bounded grace period, then force-remove it.
+      if (outcome === "timeout") await Promise.race([
+        completed.then(() => undefined, () => undefined),
+        new Promise<void>((resolve) => setTimeout(resolve, 1000)),
+      ]);
       await Promise.race([streamEnded, new Promise<void>((resolve) => setTimeout(resolve, 1000))]);
       const exitCode = outcome === "timeout" ? null : outcome.code;
       const rawStdout = out.raw();
@@ -211,7 +217,8 @@ export class DockerSandboxExecutor implements SandboxExecutor {
       const stdout = request.commands[0] === "smoke" || !hasRunnerChecks ? out.text() : checks.map((check) => check.stdout).filter(Boolean).join("\n");
       const stderr = request.commands[0] === "smoke" || !hasRunnerChecks ? err.text() : checks.map((check) => check.stderr).filter(Boolean).join("\n");
       stage = timedOut ? runningStage ?? timeoutStage : failedCheck?.command ?? (request.commands[0] === "smoke" ? "smoke" : exitCode === 0 ? "complete" : checks.length === 0 ? "upload" : "wait");
-      execution = { executed: true, status: timedOut ? "TIMEOUT" : exitCode === 0 ? "COMPLETED" : "FAILED", stdout, stderr, exitCode, durationMs: Date.now() - started, reason: timedOut ? `Se agotó el tiempo máximo durante ${stage}.` : exitCode === 0 ? "Ejecución aislada completada." : `El sandbox terminó con código ${exitCode}.`, stage, checks };
+      const dockerError = terminationError ? diagnosticMessage(terminationError, workspace) : undefined;
+      execution = { executed: true, status: timedOut ? "TIMEOUT" : exitCode === 0 ? "COMPLETED" : "FAILED", stdout, stderr: dockerError ? `${stderr}\nNo se pudo confirmar la detención del contenedor: ${dockerError.message}` : stderr, exitCode, durationMs: Date.now() - started, reason: timedOut ? `Se agotó el tiempo máximo durante ${stage}.` : exitCode === 0 ? "Ejecución aislada completada." : `El sandbox terminó con código ${exitCode}.`, stage, checks, ...(dockerError ? { dockerError } : {}) };
     } catch (error) {
       const dockerError = diagnosticMessage(error, workspace);
       execution = { executed: false, status: "FAILED", stdout: out.text(), stderr: `${err.text()}${dockerError.message}`, exitCode: null, durationMs: Date.now() - started, reason: `Falló la ejecución aislada en etapa ${stage}.`, stage, checks: checksFromRunner(out.raw(), workspace), dockerError };

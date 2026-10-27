@@ -76,6 +76,37 @@ describe("Docker sandbox policy", () => {
     expect(container.remove).toHaveBeenCalledWith({ force: true, v: true });
   }, 5000);
 
+  it("returns after timeout even when Docker cannot kill or settle wait, and preserves that error", async () => {
+    const attached = new PassThrough();
+    const hostConfig = {
+      NetworkMode: "none", ReadonlyRootfs: true, CapDrop: ["ALL"], SecurityOpt: ["no-new-privileges:true"],
+      Memory: 2 * 1024 * 1024 * 1024, NanoCpus: 1_000_000_000, PidsLimit: 128,
+      Tmpfs: {
+        "/workspace": "rw,exec,nosuid,nodev,size=1g,uid=10001,gid=10001,mode=0755",
+        "/tmp": "rw,noexec,nosuid,nodev,size=256m,uid=10001,gid=10001,mode=0700",
+        "/home/sandbox": "rw,noexec,nosuid,nodev,size=16m,uid=10001,gid=10001,mode=0700",
+      },
+      Privileged: false, PortBindings: {}, Devices: [], Binds: [], Mounts: [],
+    };
+    const container = {
+      inspect: vi.fn().mockResolvedValue({ Config: { User: "10001:10001" }, HostConfig: hostConfig, Mounts: [] }),
+      attach: vi.fn().mockResolvedValue(attached), start: vi.fn().mockResolvedValue(undefined),
+      wait: vi.fn(() => new Promise<never>(() => undefined)),
+      kill: vi.fn().mockRejectedValue(Object.assign(new Error("daemon token=secret-value could not kill container"), { statusCode: 500 })),
+      remove: vi.fn().mockResolvedValue(undefined), modem: { demuxStream: vi.fn() },
+    };
+    const docker = {
+      ping: vi.fn().mockResolvedValue("OK"), getImage: vi.fn(() => ({ inspect: vi.fn().mockResolvedValue({}) })),
+      createContainer: vi.fn().mockResolvedValue(container),
+    } as unknown as Docker;
+
+    const result = await new DockerSandboxExecutor(docker).execute({ ...request, timeoutMs: 1000 });
+    expect(result).toMatchObject({ status: "TIMEOUT", stage: "smoke", exitCode: null, dockerError: { statusCode: 500 } });
+    expect(result.stderr).toContain("daemon token=[redacted]");
+    expect(result.stderr).not.toContain("secret-value");
+    expect(container.remove).toHaveBeenCalledWith({ force: true, v: true });
+  }, 5000);
+
   it("runs the isolated smoke container when local Docker and the pinned image are available", async (ctx) => {
     const executor = new DockerSandboxExecutor();
     const availability = await executor.checkAvailability();

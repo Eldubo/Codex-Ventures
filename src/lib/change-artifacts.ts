@@ -87,6 +87,11 @@ export async function snapshotSource(root = process.cwd()): Promise<BaseSnapshot
   };
   for (const name of ROOT_FILES) await addFile(path.join(base, name), name);
   const visit = async (absolute: string, relative: string): Promise<void> => {
+    // Validate the directory being opened too. The first call is `src` itself,
+    // which has no parent entry in the traversal to validate it beforehand.
+    const directoryInfo = await lstat(absolute);
+    if (directoryInfo.isSymbolicLink()) throw new ArtifactError("SYMLINK", `El snapshot contiene un symlink no permitido: ${relative}`);
+    if (!directoryInfo.isDirectory()) throw new ArtifactError("INVALID_PATH", `La ruta del snapshot no es un directorio: ${relative}`);
     const entries = await readdir(absolute, { withFileTypes: true });
     entries.sort((a, b) => a.name.localeCompare(b.name));
     for (const entry of entries) {

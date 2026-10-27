@@ -4,9 +4,9 @@
 Auditar seguridad del snapshot, frontera Docker y empaquetado de producción; corregir riesgos encontrados, verificar pruebas, documentar resultados y respaldar el trabajo de forma incremental en GitHub.
 
 ## Estado de fases
-- Fase 0 — Inventario y sensibilidad: inspeccionados. La copia activa es `C:\Users\magon\Downloads\Codex-Ventures`; raíz Git confirmada. Rama local `codex/security-packaging-audit`, sin commits previos al checkpoint ni remotos configurados. `gh` no está instalado. GitHub ahora está conectado como la cuenta propietaria.
-- Fase 0 — Respaldo local: checkpoint local creado: `c13990a` (`chore: checkpoint Codex-Ventures before security audit`). El destino `Eldubo/Codex-Ventures` fue inspeccionado: público, vacío y sin ramas. El usuario autorizó expresamente la publicación pública. Se añadió `origin` con la URL canónica y se intentó push sin force; falló antes de actualizar refs porque el credential helper local autenticó como `matiasdubin07` (HTTP 403). Tras la confirmación del usuario, el intento de push autenticó como `Eldubo` pero también recibió HTTP 403. El conector GitHub muestra permiso admin/push, pero la credencial Git local no puede escribir. `git ls-remote --heads origin` y la API de ramas confirman que no se publicó ninguna rama.
-- Fases 1–5 — Auditoría de snapshot, advertencia Turbopack, runner, ciclo de propuestas y documentación adicional: no iniciadas en esta sesión; deben empezar después de subir el checkpoint inicial.
+- Fase 0 — Inventario y sensibilidad: inspeccionados. La copia activa es `C:\Users\magon\Downloads\Codex-Ventures`; raíz Git confirmada. Rama local `codex/security-packaging-audit`, el checkpoint inicial ya está sincronizado con `Eldubo/Codex-Ventures`. Rama `codex/security-packaging-audit`; `origin` configurado y GitHub conectado como la cuenta propietaria. `gh` no está instalado.
+- Fase 0 — Respaldo local: checkpoint local creado: `c13990a` (`chore: checkpoint Codex-Ventures before security audit`). El destino `Eldubo/Codex-Ventures` fue inspeccionado: público, vacío y sin ramas. El usuario autorizó expresamente la publicación pública. Se añadió `origin` con la URL canónica y se intentó push sin force; falló antes de actualizar refs porque el credential helper local autenticó como `matiasdubin07` (HTTP 403). El usuario reautorizó Git/GCM. Push normal completado. `git ls-remote origin refs/heads/codex/security-packaging-audit` confirmó el mismo SHA local/remoto: `c63b398bf3417d22d1128bb0455f3f3126abb768`.
+- Fases 1–5 — Auditoría de snapshot, advertencia Turbopack, runner, ciclo de propuestas y documentación adicional: iniciadas tras verificar el checkpoint remoto.
 - Fases 6–8 — Verificaciones finales y respaldo incremental: pendientes.
 
 ## Decisiones y hallazgos iniciales
@@ -39,8 +39,8 @@ Estos resultados se ejecutaron en la tarea anterior; se repetirán después de a
 ## Git y sincronización
 - Rama de trabajo: `codex/security-packaging-audit`.
 - Último checkpoint de código local: `c13990a` (`chore: checkpoint Codex-Ventures before security audit`); los commits posteriores solo actualizan `WORKLOG.md`. El último commit de registro es `HEAD` de la rama, verificable con `git log -1`.
-- Último commit confirmado en GitHub: ninguno. Conector GitHub autenticado como `Eldubo` informa permisos admin/push; el repo es público y sigue sin ramas. `origin` está configurado a `https://github.com/Eldubo/Codex-Ventures.git`. Git push local da 403 tanto como la credencial anterior `matiasdubin07` como en el intento posterior autenticado como `Eldubo`; la credencial local efectiva no tiene escritura aceptada por el servidor.
-- Estado de sincronización: local solamente; autorización pública recibida, destino confirmado, sin ramas remotas. El usuario reautenticó Git como `Eldubo`, pero GitHub aún responde 403 al push. `gh` no está instalado; el conector GitHub no proporciona transporte git. Requiere una credencial Git/GCM con permiso Contents write al repo.
+- Último commit confirmado en GitHub al comenzar esta fase: `c63b398bf3417d22d1128bb0455f3f3126abb768`, verificado idéntico con `git ls-remote`. Repositorio público `Eldubo/Codex-Ventures`, rama `codex/security-packaging-audit`; `origin` apunta a la URL canónica.
+- Estado de sincronización al inicio de auditoría: sincronizado y verificado; árbol limpio. El commit de actualización de este WORKLOG se empujará antes de ejecutar cambios de auditoría.
 
 ## Próximo paso concreto
 Actualizar/reautorizar la credencial local Git/GCM con permiso de escritura (Contents) para `Eldubo/Codex-Ventures`; reintentar `git push -u origin codex/security-packaging-audit`, verificar SHA remoto y luego iniciar la auditoría.
@@ -56,6 +56,7 @@ npm run lint
 npm run build
 npm run sandbox:build
 ```
+
 
 
 

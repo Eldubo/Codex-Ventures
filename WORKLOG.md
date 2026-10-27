@@ -4,8 +4,8 @@
 Auditar seguridad del snapshot, frontera Docker y empaquetado de producción; corregir riesgos encontrados, verificar pruebas, documentar resultados y respaldar el trabajo de forma incremental en GitHub.
 
 ## Estado de fases
-- Fase 0 — Inventario y sensibilidad: inspeccionados. La copia activa es `C:\Users\magon\Downloads\Codex-Ventures`; raíz Git confirmada. Rama local `codex/security-packaging-audit`, sin commits previos ni remotos configurados. `gh` no está instalado. GitHub no está conectado en Codex todavía.
-- Fase 0 — Respaldo local: checkpoint local creado: `c13990a` (`chore: checkpoint Codex-Ventures before security audit`). Push bloqueado hasta conectar GitHub y elegir/confirmar el repositorio privado correcto.
+- Fase 0 — Inventario y sensibilidad: inspeccionados. La copia activa es `C:\Users\magon\Downloads\Codex-Ventures`; raíz Git confirmada. Rama local `codex/security-packaging-audit`, sin commits previos al checkpoint ni remotos configurados. `gh` no está instalado. GitHub ahora está conectado como la cuenta propietaria.
+- Fase 0 — Respaldo local: checkpoint local creado: `c13990a` (`chore: checkpoint Codex-Ventures before security audit`). El destino provisto por el usuario `Eldubo/Codex-Ventures` fue inspeccionado: está vacío, sin ramas y su visibilidad actual es `public`. No se publicó código porque la instrucción exige respaldo privado y prohíbe publicación pública sin autorización expresa. Push bloqueado hasta que se cambie la visibilidad a privada o el usuario confirme de forma expresa la publicación pública.
 - Fases 1–5 — Auditoría de snapshot, advertencia Turbopack, runner, ciclo de propuestas y documentación adicional: no iniciadas en esta sesión; deben empezar después de subir el checkpoint inicial.
 - Fases 6–8 — Verificaciones finales y respaldo incremental: pendientes.
 
@@ -38,12 +38,12 @@ Estos resultados se ejecutaron en la tarea anterior; se repetirán después de a
 
 ## Git y sincronización
 - Rama de trabajo: `codex/security-packaging-audit`.
-- Último commit local: `c13990a` (`chore: checkpoint Codex-Ventures before security audit`).
-- Último commit confirmado en GitHub: ninguno. El `git remote -v` inicial no devolvió remotos y GitHub no está conectado en Codex.
-- Estado de sincronización: local solamente, push bloqueado: no existe remoto, `gh` no está instalado y GitHub no está conectado. La integración GitHub disponible se debe conectar desde la app; luego hay que confirmar el destino privado y revisar el historial remoto antes de añadir un remote.
+- Último checkpoint de código local: `c13990a` (`chore: checkpoint Codex-Ventures before security audit`); los commits posteriores solo actualizan `WORKLOG.md`. El último commit de registro es `HEAD` de la rama, verificable con `git log -1`.
+- Último commit confirmado en GitHub: ninguno. GitHub conectado como propietaria con permisos admin/push en `Eldubo/Codex-Ventures`; el repositorio se informa público y sin ramas. No se añadió remote ni se subió contenido por el bloqueo de privacidad.
+- Estado de sincronización: local solamente. Destino confirmado pero público; push pendiente de privatizarlo o recibir autorización expresa para publicar. `gh` no está instalado; el conector GitHub permite leer repos y gestionar archivos/repos existentes, pero no ofrece creación/cambio de visibilidad.
 
 ## Próximo paso concreto
-Conectar GitHub. Confirmar el repositorio privado destino e inspeccionar rama/historial antes de añadir el remoto. Publicar y verificar el checkpoint `c13990a`; solo después iniciar la auditoría de seguridad.
+Cambiar `Eldubo/Codex-Ventures` a privado (o confirmar expresamente publicación pública). Revalidar visibilidad y vacío/historial; añadir el remoto sin sobrescribir; publicar y verificar los commits locales. Solo después iniciar la auditoría de seguridad.
 
 ## Comandos para continuar
 ```powershell
@@ -56,4 +56,5 @@ npm run lint
 npm run build
 npm run sandbox:build
 ```
+
 

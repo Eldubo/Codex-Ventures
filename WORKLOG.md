@@ -37,10 +37,10 @@ Incluye el código, configuración, tests, Dockerfile/runner, `README.md`, `SECU
 ## Git y sincronización
 - Rama de trabajo: `codex/security-packaging-audit`.
 - Último commit confirmado antes de estos cambios: `86ca74e` (`docs: record verified GitHub checkpoint`), rama pública `codex/security-packaging-audit` de `Eldubo/Codex-Ventures`.
-- `origin` apunta a `https://github.com/Eldubo/Codex-Ventures.git`; no se usará force push. Los cambios de auditoría todavía están locales y deben verificarse, confirmarse y subirse.
+- `origin` apunta a `https://github.com/Eldubo/Codex-Ventures.git`. La auditoría quedó confirmada como `c54be758cd0fca55a47bbf9ceabc41378105427d` (`security: reject snapshot junctions and bound Docker timeouts`) y el push normal fue exitoso. `git ls-remote origin refs/heads/codex/security-packaging-audit` devolvió el mismo SHA; no hubo force push.
 
 ## Próximo paso concreto
-Revisar el escaneo final de secretos y diff, confirmar el checkpoint con push normal, comprobar el SHA remoto y registrar ese SHA aquí en un commit final de seguimiento.
+Continuar con la mitigación de TOCTOU y comprobar las exclusiones de tracing en el entorno de empaquetado destino; no desplegar desde los manifests Windows actuales.
 
 ## Comandos para continuar
 ```powershell

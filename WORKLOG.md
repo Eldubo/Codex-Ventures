@@ -5,7 +5,7 @@ Auditar seguridad del snapshot, frontera Docker y empaquetado de producción; co
 
 ## Estado de fases
 - Fase 0 — Inventario y sensibilidad: inspeccionados. La copia activa es `C:\Users\magon\Downloads\Codex-Ventures`; raíz Git confirmada. Rama local `codex/security-packaging-audit`, sin commits previos al checkpoint ni remotos configurados. `gh` no está instalado. GitHub ahora está conectado como la cuenta propietaria.
-- Fase 0 — Respaldo local: checkpoint local creado: `c13990a` (`chore: checkpoint Codex-Ventures before security audit`). El destino `Eldubo/Codex-Ventures` fue inspeccionado: público, vacío y sin ramas. El usuario autorizó expresamente la publicación pública. Se añadió `origin` con la URL canónica y se intentó push sin force; falló antes de actualizar refs porque el credential helper local autenticó como `matiasdubin07` (HTTP 403). Un segundo intento forzando usuario `Eldubo` falló sin credencial disponible (`GCM_INTERACTIVE=Never`, sin login automatizado). No se publicó ningún archivo ni rama.
+- Fase 0 — Respaldo local: checkpoint local creado: `c13990a` (`chore: checkpoint Codex-Ventures before security audit`). El destino `Eldubo/Codex-Ventures` fue inspeccionado: público, vacío y sin ramas. El usuario autorizó expresamente la publicación pública. Se añadió `origin` con la URL canónica y se intentó push sin force; falló antes de actualizar refs porque el credential helper local autenticó como `matiasdubin07` (HTTP 403). Tras la confirmación del usuario, el intento de push autenticó como `Eldubo` pero también recibió HTTP 403. El conector GitHub muestra permiso admin/push, pero la credencial Git local no puede escribir. `git ls-remote --heads origin` y la API de ramas confirman que no se publicó ninguna rama.
 - Fases 1–5 — Auditoría de snapshot, advertencia Turbopack, runner, ciclo de propuestas y documentación adicional: no iniciadas en esta sesión; deben empezar después de subir el checkpoint inicial.
 - Fases 6–8 — Verificaciones finales y respaldo incremental: pendientes.
 
@@ -39,11 +39,11 @@ Estos resultados se ejecutaron en la tarea anterior; se repetirán después de a
 ## Git y sincronización
 - Rama de trabajo: `codex/security-packaging-audit`.
 - Último checkpoint de código local: `c13990a` (`chore: checkpoint Codex-Ventures before security audit`); los commits posteriores solo actualizan `WORKLOG.md`. El último commit de registro es `HEAD` de la rama, verificable con `git log -1`.
-- Último commit confirmado en GitHub: ninguno. Conector GitHub autenticado como `Eldubo` informa permisos admin/push; el repo es público y sigue sin ramas. `origin` está configurado a `https://github.com/Eldubo/Codex-Ventures.git`. Git push local da 403 como `matiasdubin07`; sin credencial local para `Eldubo`.
-- Estado de sincronización: local solamente; autorización pública ya recibida, pero push bloqueado por cuenta Git local equivocada. `gh` no está instalado. El conector remoto no proporciona transporte `git push`; se requiere que el usuario autentique Git/GCM como `Eldubo` sin compartir tokens.
+- Último commit confirmado en GitHub: ninguno. Conector GitHub autenticado como `Eldubo` informa permisos admin/push; el repo es público y sigue sin ramas. `origin` está configurado a `https://github.com/Eldubo/Codex-Ventures.git`. Git push local da 403 tanto como la credencial anterior `matiasdubin07` como en el intento posterior autenticado como `Eldubo`; la credencial local efectiva no tiene escritura aceptada por el servidor.
+- Estado de sincronización: local solamente; autorización pública recibida, destino confirmado, sin ramas remotas. El usuario reautenticó Git como `Eldubo`, pero GitHub aún responde 403 al push. `gh` no está instalado; el conector GitHub no proporciona transporte git. Requiere una credencial Git/GCM con permiso Contents write al repo.
 
 ## Próximo paso concreto
-Autenticar el credential manager de Git como `Eldubo`; reintentar `git push -u origin codex/security-packaging-audit` (fast-forward a repo vacío), verificar SHA remoto y luego iniciar la auditoría de seguridad.
+Actualizar/reautorizar la credencial local Git/GCM con permiso de escritura (Contents) para `Eldubo/Codex-Ventures`; reintentar `git push -u origin codex/security-packaging-audit`, verificar SHA remoto y luego iniciar la auditoría.
 
 ## Comandos para continuar
 ```powershell
@@ -56,6 +56,7 @@ npm run lint
 npm run build
 npm run sandbox:build
 ```
+
 
 
 

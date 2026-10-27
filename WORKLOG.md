@@ -5,7 +5,7 @@ Auditar seguridad del snapshot, frontera Docker y empaquetado de producción; co
 
 ## Estado de fases
 - Fase 0 — Inventario y sensibilidad: inspeccionados. La copia activa es `C:\Users\magon\Downloads\Codex-Ventures`; raíz Git confirmada. Rama local `codex/security-packaging-audit`, sin commits previos ni remotos configurados. `gh` no está instalado. GitHub no está conectado en Codex todavía.
-- Fase 0 — Respaldo local: preparando checkpoint del árbol legítimo previo a esta auditoría. Push bloqueado hasta conectar GitHub y elegir/confirmar el repositorio privado correcto.
+- Fase 0 — Respaldo local: checkpoint local creado: `c13990a` (`chore: checkpoint Codex-Ventures before security audit`). Push bloqueado hasta conectar GitHub y elegir/confirmar el repositorio privado correcto.
 - Fases 1–5 — Auditoría de snapshot, advertencia Turbopack, runner, ciclo de propuestas y documentación adicional: no iniciadas en esta sesión; deben empezar después de subir el checkpoint inicial.
 - Fases 6–8 — Verificaciones finales y respaldo incremental: pendientes.
 
@@ -38,12 +38,12 @@ Estos resultados se ejecutaron en la tarea anterior; se repetirán después de a
 
 ## Git y sincronización
 - Rama de trabajo: `codex/security-packaging-audit`.
-- Último commit local: pendiente de crear en este checkpoint.
-- Último commit confirmado en GitHub: ninguno; remoto inexistente.
-- Estado de sincronización: local solamente, push bloqueado por falta de conexión/repositorio de destino.
+- Último commit local: `c13990a` (`chore: checkpoint Codex-Ventures before security audit`).
+- Último commit confirmado en GitHub: ninguno. El `git remote -v` inicial no devolvió remotos y GitHub no está conectado en Codex.
+- Estado de sincronización: local solamente, push bloqueado: no existe remoto, `gh` no está instalado y GitHub no está conectado. La integración GitHub disponible se debe conectar desde la app; luego hay que confirmar el destino privado y revisar el historial remoto antes de añadir un remote.
 
 ## Próximo paso concreto
-Tras conectar GitHub, confirmar el repositorio privado destino, inspeccionar su rama/historial antes de añadir el remoto, publicar el checkpoint local y verificar el hash remoto. Luego iniciar la auditoría de seguridad.
+Conectar GitHub. Confirmar el repositorio privado destino e inspeccionar rama/historial antes de añadir el remoto. Publicar y verificar el checkpoint `c13990a`; solo después iniciar la auditoría de seguridad.
 
 ## Comandos para continuar
 ```powershell
@@ -56,3 +56,4 @@ npm run lint
 npm run build
 npm run sandbox:build
 ```
+

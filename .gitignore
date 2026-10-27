@@ -1,0 +1,10 @@
+node_modules/
+.next/
+.data/
+out/
+coverage/
+*.tsbuildinfo
+codex-ventures-tmp/
+.env*
+!.env.example
+npm-debug.log*

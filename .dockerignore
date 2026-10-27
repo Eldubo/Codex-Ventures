@@ -1,0 +1,13 @@
+.git
+.data
+.next
+node_modules
+**/node_modules
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+npm-debug.log*
+.DS_Store

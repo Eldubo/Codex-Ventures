@@ -1,0 +1,40 @@
+{
+  "name": "codex-ventures",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "sandbox:build": "docker build --pull=false -t codex-ventures-sandbox:node24-1 -f sandbox/Dockerfile ."
+  },
+  "dependencies": {
+    "dockerode": "^5.0.1",
+    "lucide-react": "^1.62.0",
+    "next": "16.4.3",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "recharts": "^3.10.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@babel/types": "^7.29.11",
+    "@tailwindcss/turbopack": "^4",
+    "@types/dockerode": "^4.0.2",
+    "@types/node": "^24.19.2",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "es-abstract": "^1.23.9",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.3",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vitest": "^5.0.5"
+  }
+}

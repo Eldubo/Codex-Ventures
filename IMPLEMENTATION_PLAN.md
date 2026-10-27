@@ -1,0 +1,63 @@
+# Codex-Ventures Implementation Plan
+
+## Repository findings
+- The repository is empty (only `.git` exists); no existing application stack or local instructions were found.
+- Node.js v24.18.0 and npm 11.16.0 are available.
+- The MVP will use Next.js App Router, strict TypeScript, Tailwind, route handlers, Zod, and a local persistent JSON store so the demo runs without PostgreSQL or external credentials. The storage boundary will keep a future Prisma/PostgreSQL adapter possible.
+- External execution and deployment will remain simulated; no unsafe host code execution or claims of real deployment.
+
+## Phases and acceptance criteria
+1. **Foundation** — scaffold the app, strict quality scripts, documented data/storage/security architecture, and deterministic demo seed. Acceptance: app starts without API keys and persists local state.
+2. **Product workflow** — dashboard, project creation, editable thesis/spec, typed API, and responsive navigation. Acceptance: create and inspect a project end-to-end.
+3. **Simulation and analytics** — seeded state machine, configurable market effects, persisted events, derived metrics, feedback grouping, and job status. Acceptance: simulation changes event-derived metrics reproducibly and is restartable.
+4. **Recommendations and review** — CTO summary, improvement proposals, approval/rejection transitions, audit trail, version comparison. Acceptance: evidence-linked proposal can be reviewed without executing arbitrary code.
+5. **Validation and handoff** — unit/integration checks, production build, docs, known limitations. Acceptance: commands and actual verification results are recorded accurately.
+
+## Current status
+- **Foundation:** complete — Next.js 16 App Router, strict TypeScript, Zod API validation, local JSON persistence, deterministic DevHabit demo, and documented security boundary.
+- **Product workflow:** core path complete — project creation generates an initial thesis and MVP outline; the dashboard and responsive workspace navigation are wired to local APIs. Editing thesis text in place remains follow-up work.
+- **Simulation and analytics:** core path complete — configurable deterministic agent state machine, persisted events, event-derived funnel metrics, grouped friction reports, durable single-process jobs, retry recovery, cancellation while queued, and SSE progress.
+- **Recommendations and review:** approval enqueues an implementation job. Since proposals still have no validated diff, the worker now fails safely before creating a workspace or container. Full CTO tools, code diffs, test-execution workflow, rollback, and version-to-version statistical comparison remain deferred.
+- **Validation:** 10 tests passed and the Docker smoke integration test was skipped because Docker Engine/the image are unavailable. Typecheck, lint, and production build passed in the Downloads copy.
+
+PostgreSQL/Prisma migrations, multi-user isolation, multi-process workers, full SSE replay/auth, a real model provider, reviewed diff execution, external deployment, and Playwright coverage are deferred. Local persistence and simulated product agents are the verified functional path. See README.md and SECURITY.md for limitations.
+
+## Phase 2 audit (2026-10-27)
+
+- The app is a Next.js App Router project. `src/lib/domain.ts` contains deterministic simulation rules and event-derived metrics; `src/lib/store.ts` persists the entire workspace as one JSON document under `.data/`.
+- The store uses a temporary file plus rename for each write, protecting against partial files, but has no in-process write queue or cross-process locking. Concurrent updates can overwrite one another.
+- Simulations currently run synchronously in `POST /api/simulations`; jobs and restart recovery do not exist. Proposal approval only changes a state and adds activity.
+- Validation is three unit tests for simulator determinism, funnel metrics, and market sensitivity. No integration/E2E tests exist.
+- Baseline in `C:\Users\magon\Downloads\Codex-Ventures`: `npm run test`, `npm run typecheck`, `npm run lint`, and `npm run build` all passed before Phase 2 edits.
+- Docker CLI/Compose and PostgreSQL/psql are unavailable; `127.0.0.1:5432` does not accept connections. Therefore a live Prisma migration or real sandbox cannot be verified here. The active runtime will remain JSON-backed and must expose sandbox unavailability explicitly. Database schema/compose may be added as optional setup, but will not be represented as an active adapter without an executable/verified database path.
+- The copied `.git` metadata has no commits or remote. The Downloads copy is the canonical working/testing folder for this phase.
+
+## Phase 2 implementation status
+
+- **Persistent store hardening:** complete for the local single-process adapter. Mutations are serialized, writes use unique temp files plus atomic rename, old JSON is normalized with an empty jobs collection, and initialization handles concurrent first reads. Multi-process locking and PostgreSQL/Prisma are not implemented or claimed.
+- **Persistent jobs:** complete for local demo execution. Simulation jobs store idempotency key, payload, state, progress, attempt counts, timestamps, result/error, and survive process restarts. Startup recovery requeues interrupted jobs until attempts are exhausted; exhausted jobs are marked failed. The worker processes one at a time. Queued jobs can be cancelled and failed jobs can be manually retried. Automatic retries are capped at three attempts without exponential backoff.
+- **Progress:** SSE streams job snapshots/progress/terminal status. Reconnection returns current state, not a full persisted event replay; auth remains out of scope for this local single-user app.
+- **Implementation approvals:** complete through the real queued workflow up to the capability boundary. Approval enqueues a job and advances the proposal to `IMPLEMENTING`; this environment has no Docker, so the job records `FAILED` with an explicit reason and the proposal follows it to `FAILED`. No host execution, diff, tests, version creation, or deployment is faked.
+- **Validation after implementation:** 9 unit tests passed, typecheck/lint/build passed, plus HTTP checks for `202` enqueue, idempotent resubmission, terminal SSE snapshot, simulation event persistence, implementation failure due to missing Docker, and demo reset.
+
+Remaining Phase 2 work is PostgreSQL/Prisma plus JSON import, multi-process job coordination and exponential retry backoff, safe patch materialization and review, trusted project-check image design, and full integration/E2E coverage. PostgreSQL and Docker are unavailable on this machine, so those pieces require infrastructure to verify safely.
+
+## Docker sandbox implementation (2026-10-27)
+
+- Added Dockerode local Engine API access; on Windows it uses the local Docker Desktop named pipe and on Unix the local socket. The executor does not read `DOCKER_HOST`, connect to remote endpoints, pull images, or accept a caller-selected image.
+- Added explicit `sandbox:build` operator command and a tiny fixed runner image. The only enabled operation is `smoke`; test/typecheck/lint/build and project file execution are deliberately rejected until proposals contain a validated patch and have a safe materialization/review path.
+- The disposable smoke container runs as UID 10001 with no network, read-only root, all capabilities dropped, no-new-privileges, bounded memory/CPU/PIDs, bounded tmpfs/logs, and a single temporary workspace mount. Container and workspace cleanup run in `finally`; cleanup failure is a failed result.
+- Approval worker now stops before any sandbox operation when the proposal lacks a validated diff. No public API exposes container creation.
+- Initial local verification before Docker was available: 10 tests passed and the integration test was skipped. See the smoke failure investigation below for the later Docker-enabled verification.
+
+## Docker smoke failure investigation (2026-10-27)
+
+- Reproduced the reported pre-fix suite result: 10 tests passed and 1 failed. Captured executor result before changing runtime behavior: `status=FAILED`, `exitCode=64`, empty stdout, stderr `La imagen de smoke sólo acepta el comando smoke.`, stage implicit at container wait.
+- Root cause found in this follow-up: after the earlier `ENTRYPOINT`/`Cmd` correction, the smoke initially failed with `EACCES` writing `/workspace/sandbox-smoke.txt`. The tmpfs was mounted over a `0555` image directory but had no explicit mode, so uid 10001 could not write despite the `rw` flag. The proposal loader also used a Dockerode attach stream without `hijack`, while a separate `docker exec tar` loader could wait indefinitely for stdin EOF. Finally, workspace commands failed with `Permission denied` because `/workspace` inherited non-executable tmpfs behavior, and a runner with successful checks did not exit after its final marker.
+- Corrections: explicitly set `/workspace` owner/mode and executable tmpfs option while keeping `/tmp` and home `noexec`; use a bounded JSON file transfer over a hijacked stream into a fixed runner that validates every path/size before writing; make the runner exit after final success or first failure; use a hash-derived demo fixture path to avoid collisions when the project test suite itself creates a fixture in the patched workspace. Workspace and memory limits are bounded at 1 GiB and 2 GiB; CPU and PID limits remain 1 CPU and 128. Dockerode is marked as a server external so Turbopack does not bundle its native SSH addon.
+- Before fixing the tmpfs mode, the live failure was captured as `status=FAILED`, `exitCode=1`, `stderr=EACCES: permission denied, open '/workspace/sandbox-smoke.txt'`, stage `smoke`. Before enabling workspace execution, `npm ci` passed but `npm test` failed with exit 126 and `sh: vitest: Permission denied`. After those fixes, the runner produced real successful markers for install, test (19 passed, 2 skipped), typecheck and lint; the host E2E then caught a stale assertion about a fixed fixture filename, which was updated to check the hashed fixture name.
+- Added regression coverage for the image `ENTRYPOINT`/`Cmd` contract, Docker create error diagnostics/redaction, and the security config. The live smoke run also verifies effective container configuration via `docker inspect`; Docker reports writable mount state through `Mounts[].RW` and omits `ReadOnly:false` in `HostConfig.Mounts`, so the runtime check uses the effective field.
+- Verified on Docker Desktop `desktop-linux`: smoke and full proposal validation passed. The container uses UID 10001, network `none`, read-only rootfs, dropped capabilities, `no-new-privileges`, bounded CPU/memory/PIDs/logs, and writable tmpfs only for `/workspace`, `/tmp` and `/home/sandbox`; it has no bind mounts. Source snapshots exclude `.git`, `.data`, `.env`, `node_modules`, `.next`, and symlinks. The executor validates the effective Docker configuration before sending the disposable workspace.
+- Final verification on this phase's code: `npm test` passed (20 passed, 1 skipped; includes live smoke and full Docker proposal flow); `npm run typecheck` passed; `npm run lint` passed; `npm run build` exited 0. Build still prints two Turbopack warnings that dynamic snapshot filesystem access can trace/include the project in server output. No deploy was performed; review that warning before any deployment packaging.
+- The live fixture job executed `npm ci --offline --ignore-scripts`, `npm test`, `npm run typecheck`, and `npm run lint` inside Docker, with all four runner records at exit code 0. The test command inside that sandbox reported 19 passed and 2 skipped; those skipped tests are conditional integrations whose local Docker process is unavailable from inside the no-network sandbox.
+- `npm run sandbox:build` completed successfully using the local `desktop-linux` engine and pinned image. It is an operator build step, not an app-triggered image pull or build.
